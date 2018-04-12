@@ -1,0 +1,41 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="AlarmRecorder.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="PC_ID" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">A1</Value>
+    </Setting>
+    <Setting Name="LOG_PATH" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">LOG</Value>
+    </Setting>
+    <Setting Name="RMQHostName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">rmq-balancer.ommc.com</Value>
+    </Setting>
+    <Setting Name="RMQPort" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">5677</Value>
+    </Setting>
+    <Setting Name="RMQUserName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">AlarmRecorder</Value>
+    </Setting>
+    <Setting Name="RMQPassword" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">AlarmRecorder</Value>
+    </Setting>
+    <Setting Name="RMQVirtualHost" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">/</Value>
+    </Setting>
+    <Setting Name="RMQInboundExchangeName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">plctags_out</Value>
+    </Setting>
+    <Setting Name="RMQOutboundExchangeName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">plctags_in</Value>
+    </Setting>
+    <Setting Name="OmmcMesConnectionString" Type="(Connection string)" Scope="Application">
+      <DesignTimeValue Profile="(Default)">&lt;?xml version="1.0" encoding="utf-16"?&gt;
+&lt;SerializableConnectionString xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"&gt;
+  &lt;ConnectionString&gt;Data Source=test-db.ommc.com;Initial Catalog=OmmcMes;Persist Security Info=True;User ID=djohnson;Password=djohnson&lt;/ConnectionString&gt;
+  &lt;ProviderName&gt;System.Data.SqlClient&lt;/ProviderName&gt;
+&lt;/SerializableConnectionString&gt;</DesignTimeValue>
+      <Value Profile="(Default)">Data Source=test-db.ommc.com;Initial Catalog=OmmcMes;Persist Security Info=True;User ID=djohnson;Password=djohnson</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
