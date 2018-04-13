@@ -99,6 +99,11 @@ namespace AlarmRecorder
                 PostLogMessage(ex.ToString());
                 return false;
             }
+            catch (Exception ex)
+            {
+                PostLogMessage(ex.ToString());
+                return false;
+            }
         }
 
         delegate void Consumer_Received_(object sender, BasicDeliverEventArgs e);
@@ -189,9 +194,10 @@ namespace AlarmRecorder
             PostLogMessage("CreateFabric finished for " + InboundExchangeName + " on queue " + InboundQueueName + " and " + OutboundExchangeName );
         }
 
+        private EventingBasicConsumer consumer;
         public bool Subscribe()
         {
-            var consumer = new EventingBasicConsumer(channel);
+            consumer = new EventingBasicConsumer(channel);
             consumer.Received += Consumer_Received;
 
             try

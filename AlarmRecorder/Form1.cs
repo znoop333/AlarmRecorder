@@ -63,6 +63,7 @@ namespace AlarmRecorder
 
             AlarmList = MyDbLib.AlarmRecorderList(PC_ID);
             SubscribeAlarms();
+            RereadTags();
 
             SetupDataGridView();
             RefreshData();
@@ -126,30 +127,12 @@ namespace AlarmRecorder
                 m.RequesterIP = pi.IP;
                 m.TagName = this.WWPrefix + dr.TAG_ID;
                 m.Once = false;
-                m.CorrelationId = (++LastCorrelationId).ToString();
+                m.CorrelationId = Guid.NewGuid().ToString();
 
                 LogToGUI(String.Format("Subscribing to " + m.TagName + ", CorrelationId:" + m.CorrelationId));
 
                 rmq.PutMessage(PC_ID, JsonConvert.SerializeObject(m), m.CorrelationId);
             }
-
-            /*
-            // request the latest value, just in case they were already advised once
-            foreach (var dr in AlarmList)
-            {
-                var m = new RMQWonderwareAdapter.RmqCommandMessage();
-                m.Command = "READ";
-                m.RequesterName = "AlarmRecorder";
-                m.RequesterIP = pi.IP;
-                m.TagName = this.WWPrefix + dr.TAG_ID;
-                m.Once = false;
-                m.CorrelationId = (++LastCorrelationId).ToString();
-
-                LogToGUI(String.Format("Reading " + m.TagName + ", CorrelationId:" + m.CorrelationId));
-
-                rmq.PutMessage(PC_ID, JsonConvert.SerializeObject(m), m.CorrelationId);
-            }
-            */
 
 
         }
@@ -210,7 +193,7 @@ namespace AlarmRecorder
                 return;
             }
 
-            AlarmList.Where(dr => WWPrefix + dr.TAG_ID == ParsedMessage.TagName).ToList().ForEach( dr => dr.Value = ParsedMessage.Value == "True" ? "1" : "0" );
+            AlarmList.Where(dr => WWPrefix + dr.TAG_ID == ParsedMessage.TagName).ToList().ForEach( dr => dr.Value = ParsedMessage.Value == null ? "" : ParsedMessage.Value == "True" ? "1" : "0" );
             this.RefreshData();
 
             s = "Received JSON: " + e.OriginalMessageString;
@@ -231,6 +214,8 @@ namespace AlarmRecorder
                     LogToGUI("Unknown command " + ParsedMessage.Command);
                     break;
             }
+
+            LogHelper.FlushTextbox(textBoxLog);
 
         }
 
@@ -256,14 +241,18 @@ namespace AlarmRecorder
             LogHelper.FlushLogFiles();
             LogHelper.CloseLogFiles();
 
+            Console.WriteLine("Before Disconnect ");
 
-            await Task.Delay(5000);
-            Environment.Exit(0);
+            //await Task.Delay(5000);
+            //Environment.Exit(0);
             //Environment.FailFast("");
 
             // is channel.BasicCancel() causing a hang here? see https://github.com/rabbitmq/rabbitmq-dotnet-client/issues/341
-            await rmq.Unsubscribe();
+            //await rmq.Unsubscribe();
             await rmq.Disconnect();
+
+            // this line is never reached!
+            Console.WriteLine("After Disconnect ");
 
             LogHelper.AppendToLogfile(fn, "RMQ exited");
 
@@ -301,6 +290,38 @@ namespace AlarmRecorder
             }
 
 
+        }
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+
+        }
+
+        private void RereadTags()
+        {
+            var pi = new ProgramInfo();
+
+            // request the latest value, just in case they were already advised once
+            foreach (var dr in AlarmList)
+            {
+                var m = new RMQWonderwareAdapter.RmqCommandMessage();
+                m.Command = "READ";
+                m.RequesterName = "AlarmRecorder";
+                m.RequesterIP = pi.IP;
+                m.TagName = this.WWPrefix + dr.TAG_ID;
+                m.Once = false;
+                m.CorrelationId = Guid.NewGuid().ToString();
+
+                LogToGUI(String.Format("Reading " + m.TagName + ", CorrelationId:" + m.CorrelationId));
+
+                rmq.PutMessage(PC_ID, JsonConvert.SerializeObject(m), m.CorrelationId);
+            }
+        }
+
+        private void reReadTagsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            RereadTags();
         }
     }
 }
