@@ -31,5 +31,41 @@ namespace AlarmRecorder
             }
         }
 
+        public static OmmcMesDataSet.PLC_TAG_LOOKUP_PLC_IPRow PLC_TAG_LOOKUP_PLC_IP(string WW_ITEM_NAME)
+        {
+            try
+            {
+                using (var ta = new OmmcMesDataSetTableAdapters.PLC_TAG_LOOKUP_PLC_IPTableAdapter())
+                {
+                    var dt = ta.GetData(WW_ITEM_NAME);
+                    if (dt != null && dt.Rows.Count > 0)
+                        return dt[0];
+                }
+            }
+            catch (SqlException ex)
+            {
+                LogError(ex);
+            }
+            return null;
+        }
+
+        public static OmmcMesDataSet.PLC_TAG_LOOKUP_WW_ITEM_NAMERow PLC_TAG_LOOKUP_WW_ITEM_NAME(string PLC_IP, string TAG_ID)
+        {
+            try
+            {
+                using (var ta = new OmmcMesDataSetTableAdapters.PLC_TAG_LOOKUP_WW_ITEM_NAMETableAdapter())
+                {
+                    var dt = ta.GetData(PLC_IP, TAG_ID);
+                    if (dt != null && dt.Rows.Count > 0)
+                        return dt[0];
+                }
+            }
+            catch (SqlException ex)
+            {
+                LogError(ex);
+            }
+            return null;
+        }
+
     }
 }

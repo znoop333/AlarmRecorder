@@ -21,8 +21,6 @@ namespace AlarmRecorder
         RMQManager rmq;
         private SynchronizationContext _syncContext = null;
         OmmcMesDataSet.AlarmRecorderListDataTable AlarmList;
-        int LastCorrelationId = 0;
-        string WWPrefix = "DDESuite_CLX02.MTqStopper02.";
 
         private BindingSource SBind;
 
@@ -79,6 +77,15 @@ namespace AlarmRecorder
 
             var c = new DataGridViewTextBoxColumn()
             {
+                Name = "PLC_IP",
+                HeaderText = "PLC",
+                DataPropertyName = "PLC_IP",
+                SortMode = DataGridViewColumnSortMode.Automatic
+            };
+            dataGridViewAlarms.Columns.Add(c);
+
+            c = new DataGridViewTextBoxColumn()
+            {
                 Name = "TAG_ID",
                 HeaderText = "Tag",
                 DataPropertyName = "TAG_ID",
@@ -121,15 +128,24 @@ namespace AlarmRecorder
 
             foreach (var dr in AlarmList)
             {
+                var plcInfo = MyDbLib.PLC_TAG_LOOKUP_WW_ITEM_NAME(dr.PLC_IP, dr.TAG_ID);
+                if(plcInfo == null)
+                {
+                    LogToGUI("Failed to add PLC " + dr.PLC_IP + " Tag " + dr.TAG_ID + " - not found in MST_PLC_TAGS");
+                    continue;
+                }
+
                 var m = new RMQWonderwareAdapter.RmqCommandMessage();
                 m.Command = "SUBSCRIBE";
                 m.RequesterName = "AlarmRecorder";
                 m.RequesterIP = pi.IP;
-                m.TagName = this.WWPrefix + dr.TAG_ID;
+                m.PLC_IP = plcInfo.PLC_IP;
+                m.TagName = plcInfo.TAG_ID;
+                m.ItemName = plcInfo.WW_ITEM_NAME;
                 m.Once = false;
                 m.CorrelationId = Guid.NewGuid().ToString();
 
-                LogToGUI(String.Format("Subscribing to " + m.TagName + ", CorrelationId:" + m.CorrelationId));
+                LogToGUI(String.Format("Subscribing to PLC " + dr.PLC_IP + " Tag " + dr.TAG_ID + " - " + m.ItemName + ", CorrelationId:" + m.CorrelationId));
 
                 rmq.PutMessage(PC_ID, JsonConvert.SerializeObject(m), m.CorrelationId);
             }
@@ -186,14 +202,14 @@ namespace AlarmRecorder
                 return;
             }
 
-            var cnt = AlarmList.Count(dr => WWPrefix + dr.TAG_ID == ParsedMessage.TagName );
+            var cnt = AlarmList.Count(dr => dr.PLC_IP == ParsedMessage.PLC_IP && dr.TAG_ID == ParsedMessage.TagName );
             if(cnt == 0)
             {
-                LogToGUI("Ignoring event for " + ParsedMessage.TagName + " with value " + ParsedMessage.Value);
+                LogToGUI("Ignoring event for " + ParsedMessage.ItemName + " with value " + ParsedMessage.Value);
                 return;
             }
 
-            AlarmList.Where(dr => WWPrefix + dr.TAG_ID == ParsedMessage.TagName).ToList().ForEach( dr => dr.Value = ParsedMessage.Value == null ? "" : ParsedMessage.Value == "True" ? "1" : "0" );
+            AlarmList.Where(dr => dr.PLC_IP == ParsedMessage.PLC_IP && dr.TAG_ID == ParsedMessage.TagName).ToList().ForEach( dr => dr.Value = ParsedMessage.Value == null ? "" : ParsedMessage.Value == "True" ? "1" : "0" );
             this.RefreshData();
 
             s = "Received JSON: " + e.OriginalMessageString;
@@ -203,11 +219,11 @@ namespace AlarmRecorder
             switch (ParsedMessage.Command)
             {
                 case "DataChange":
-                    LogToGUI("DataChange occurred on tag " + ParsedMessage.TagName + " with value " + ParsedMessage.Value);
+                    LogToGUI("DataChange occurred on tag " + ParsedMessage.ItemName + " with value " + ParsedMessage.Value);
 
                     break;
                 case "LastValue":
-                    LogToGUI("LastValue on tag " + ParsedMessage.TagName + " with value " + ParsedMessage.Value);
+                    LogToGUI("LastValue on tag " + ParsedMessage.ItemName + " with value " + ParsedMessage.Value);
 
                     break;
                 default:
@@ -265,7 +281,7 @@ namespace AlarmRecorder
             int r = e.RowIndex, c = e.ColumnIndex;
 
             // don't try to format the dgv until all of the columns are loaded
-            if (dataGridViewAlarms.Rows[r].Cells.Count < 3)
+            if (dataGridViewAlarms.Rows[r].Cells.Count < 4)
                 return;
 
             string TAG_ID = dataGridViewAlarms.Rows[r].Cells["TAG_ID"].Value as string;
@@ -305,11 +321,20 @@ namespace AlarmRecorder
             // request the latest value, just in case they were already advised once
             foreach (var dr in AlarmList)
             {
+                var plcInfo = MyDbLib.PLC_TAG_LOOKUP_WW_ITEM_NAME(dr.PLC_IP, dr.TAG_ID);
+                if (plcInfo == null)
+                {
+                    LogToGUI("Failed to add PLC " + dr.PLC_IP + " Tag " + dr.TAG_ID + " - not found in MST_PLC_TAGS");
+                    continue;
+                }
+
                 var m = new RMQWonderwareAdapter.RmqCommandMessage();
                 m.Command = "READ";
                 m.RequesterName = "AlarmRecorder";
                 m.RequesterIP = pi.IP;
-                m.TagName = this.WWPrefix + dr.TAG_ID;
+                m.PLC_IP = dr.PLC_IP;
+                m.TagName = dr.TAG_ID;
+                m.ItemName = plcInfo.WW_ITEM_NAME;
                 m.Once = false;
                 m.CorrelationId = Guid.NewGuid().ToString();
 

@@ -9,7 +9,10 @@ namespace RMQWonderwareAdapter
     class RmqCommandMessage
     {
         public String Command { get; set; }
+        public String PLC_IP { get; set; }
         public String TagName { get; set; }
+        public String ItemName { get; set; }
+        public String Description { get; set; }
         public String Value { get; set; }
         public Boolean Once { get; set; }
         public String RequesterIP { get; set; }
@@ -22,7 +25,10 @@ namespace RMQWonderwareAdapter
     class RmqResponseMessage
     {
         public String Command { get; set; }
+        public String PLC_IP { get; set; }
         public String TagName { get; set; }
+        public String ItemName { get; set; }
+        public String Description { get; set; }
         public String Value { get; set; }
         public Boolean Once { get; set; }
         public string CorrelationId { get; set; }
